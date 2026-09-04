@@ -1,0 +1,45 @@
+name: Import verified unified suite release
+
+on:
+  push:
+    paths:
+      - '.github/workflows/import-unified-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified release artifact
+        env:
+          RELEASE_URL: 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-9130-81f5-9c7b-0b1e1c4c7566/raw?se=2026-09-04T16%3A30%3A59Z&sp=r&sv=2026-02-06&sr=b&scid=2c07fd03-d70c-5bce-bc89-f7d2aff83476&skoid=a1be202a-6464-476c-a496-723317c4a4db&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-04T12%3A56%3A44Z&ske=2026-09-05T12%3A56%3A44Z&sks=b&skv=2026-02-06&sig=jCiKqO7lJD8/13IC2ogkGxFMX16ELzIZoMStUB669KM%3D'
+        run: |
+          curl -fL --retry 3 --retry-delay 1 "$RELEASE_URL" -o release-artifact.zip
+          echo 'b690aec690c838fe24256140083464873ba16d09ec2248c82eff1945226549f1  release-artifact.zip' | sha256sum -c -
+          rm -rf imported
+          mkdir imported
+          unzip -q release-artifact.zip -d imported
+          echo 'd9397af303ae3a530f801cd693f9c0b36111e92e8973fbb506cabe331366a3b2  imported/unified-composer-toolbox-suite.tar.gz' | sha256sum -c -
+
+      - name: Publish stable public build source
+        run: |
+          mkdir -p release
+          cp imported/unified-composer-toolbox-suite.tar.gz release/unified-composer-toolbox-suite.tar.gz
+          printf '%s  %s\n' 'd9397af303ae3a530f801cd693f9c0b36111e92e8973fbb506cabe331366a3b2' 'unified-composer-toolbox-suite.tar.gz' > release/SHA256SUMS
+          cat > release/README.md <<'EOF'
+          # Verified unified Composer Toolbox release
+
+          This archive contains one static host with the Composer Toolbox at `/`, Circle of Threes at `/threes/`, Circle of Infinity at `/infinity/`, and the full Circle of Time at `/time/`.
+
+          SHA-256: `d9397af303ae3a530f801cd693f9c0b36111e92e8973fbb506cabe331366a3b2`
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add release
+          git commit -m 'Publish verified unified suite deployment archive'
+          git push
