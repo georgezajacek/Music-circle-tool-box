@@ -1,0 +1,10 @@
+{
+  "name": "composer-toolbox-unified-release",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Checksum-verified static release payload for the unified Composer Toolbox suite.",
+  "files": [
+    "release"
+  ],
+  "license": "UNLICENSED"
+}
